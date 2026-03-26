@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отзывы — VirtualDeal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c12; --surface: #111520; --surface2: #161b28;
+    --accent: #00e5a0; --accent2: #0099ff; --gold: #f5c542;
+    --text: #e8ecf4; --muted: #7a8299; --border: rgba(255,255,255,0.07);
+    --red: #ff5c5c;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:'Inter',sans-serif; min-height:100vh; }
+  .bg-grid {
+    position:fixed; inset:0; pointer-events:none; z-index:0;
+    background-image: linear-gradient(rgba(0,229,160,0.03) 1px,transparent 1px), linear-gradient(90deg,rgba(0,229,160,0.03) 1px,transparent 1px);
+    background-size:60px 60px;
+  }
+
+  header {
+    position:sticky; top:0; z-index:100;
+    background:rgba(10,12,18,0.9); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    padding:0 40px; height:68px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .logo { display:flex; align-items:center; gap:12px; text-decoration:none; }
+  .logo-icon { width:38px; height:38px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:10px; display:flex; align-items:center; justify-content:center; font-size:18px; box-shadow:0 0 20px rgba(0,229,160,0.3); }
+  .logo-text { font-family:'Inter',sans-serif; font-weight:800; font-size:1.4rem; color:var(--text); }
+  .logo-text span { color:var(--accent); }
+  .back-btn {
+    background:transparent; border:1px solid var(--border);
+    color:var(--muted); font-family:'Inter',sans-serif;
+    padding:8px 18px; border-radius:8px; cursor:pointer;
+    font-size:0.85rem; transition:all 0.2s; text-decoration:none;
+    display:inline-block;
+  }
+  .back-btn:hover { border-color:rgba(0,229,160,0.3); color:var(--accent); }
+
+  .container { position:relative; z-index:1; max-width:900px; margin:0 auto; padding:50px 24px 80px; }
+
+  /* RATING SUMMARY */
+  .rating-summary {
+    background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:36px 40px; margin-bottom:36px;
+    display:flex; gap:48px; align-items:center; flex-wrap:wrap;
+  }
+  .rating-big { font-family:'Inter',sans-serif; font-size:5rem; font-weight:800; color:var(--gold); line-height:1; }
+  .rating-stars-row { display:flex; gap:6px; margin:10px 0 6px; }
+  .star-big { font-size:1.6rem; color:var(--gold); }
+  .rating-total { color:var(--muted); font-size:0.88rem; }
+  .rating-bars { flex:1; min-width:200px; }
+  .bar-row { display:flex; align-items:center; gap:10px; margin-bottom:8px; }
+  .bar-label { color:var(--muted); font-size:0.82rem; width:36px; text-align:right; white-space:nowrap; }
+  .bar-track { flex:1; height:6px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; }
+  .bar-fill { height:100%; border-radius:4px; background:var(--gold); }
+  .bar-count { color:var(--muted); font-size:0.78rem; width:24px; }
+
+  /* FILTERS */
+  .filter-row {
+    display:flex; gap:10px; flex-wrap:wrap; margin-bottom:28px; align-items:center;
+  }
+  .filter-label { color:var(--muted); font-size:0.85rem; margin-right:4px; }
+  .filter-btn {
+    background:var(--surface2); border:1px solid var(--border);
+    color:var(--muted); font-family:'Inter',sans-serif;
+    padding:7px 16px; border-radius:8px; cursor:pointer;
+    font-size:0.83rem; transition:all 0.2s;
+  }
+  .filter-btn:hover, .filter-btn.active {
+    border-color:rgba(245,197,66,0.4); color:var(--gold); background:rgba(245,197,66,0.05);
+  }
+  .filter-btn.active { font-weight:600; }
+
+  /* REVIEW CARD */
+  .reviews-grid { display:flex; flex-direction:column; gap:14px; }
+  .review-card {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:14px; padding:20px 24px;
+    transition:border-color 0.2s;
+  }
+  .review-card:hover { border-color:rgba(255,255,255,0.12); }
+  .review-header { display:flex; align-items:center; gap:12px; margin-bottom:10px; }
+  .avatar {
+    width:36px; height:36px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:0.8rem; font-weight:700; flex-shrink:0;
+    font-family:'Inter',sans-serif;
+  }
+  .review-meta { flex:1; }
+  .review-name { font-weight:600; font-size:0.9rem; }
+  .review-date { color:var(--muted); font-size:0.75rem; margin-top:2px; }
+  .review-stars { display:flex; gap:2px; font-size:0.9rem; }
+  .s-gold { color:var(--gold); }
+  .s-empty { color:rgba(255,255,255,0.15); }
+  .review-text { color:#b0b8cc; font-size:0.88rem; line-height:1.6; }
+  .badge-verified {
+    background:rgba(0,229,160,0.08); border:1px solid rgba(0,229,160,0.2);
+    color:var(--accent); font-size:0.68rem; padding:2px 8px; border-radius:10px;
+    white-space:nowrap; margin-left:auto;
+  }
+
+  /* ADD REVIEW */
+  .add-review-section { margin-bottom:28px; }
+  .add-review-btn {
+    background:linear-gradient(135deg,var(--accent),var(--accent2));
+    border:none; border-radius:10px; padding:13px 28px;
+    color:#000; font-weight:700; font-size:0.92rem;
+    cursor:pointer; font-family:'Inter',sans-serif;
+    transition:opacity 0.2s;
+  }
+  .add-review-btn:hover { opacity:0.88; }
+  .add-review-form {
+    display:none; margin-top:16px;
+    background:var(--surface2); border:1px solid var(--border);
+    border-radius:16px; padding:28px;
+  }
+  .add-review-form.open { display:block; }
+  .form-group { margin-bottom:18px; }
+  .form-group label { display:block; font-size:0.82rem; color:var(--muted); margin-bottom:8px; font-weight:500; }
+  .form-input, .form-textarea {
+    width:100%; background:var(--bg);
+    border:1px solid var(--border); border-radius:10px;
+    padding:12px 16px; color:var(--text);
+    font-size:0.9rem; font-family:'Inter',sans-serif;
+    outline:none; transition:border-color 0.2s;
+  }
+  .form-input:focus, .form-textarea:focus { border-color:rgba(0,229,160,0.35); }
+  .form-textarea { resize:vertical; min-height:90px; }
+  .star-picker { display:flex; gap:6px; margin-bottom:18px; }
+  .star-pick { font-size:1.6rem; cursor:pointer; color:rgba(255,255,255,0.2); transition:color 0.15s; }
+  .star-pick.lit { color:var(--gold); }
+  .form-submit {
+    background:var(--accent); border:none; border-radius:8px;
+    padding:11px 26px; color:#000; font-weight:700;
+    font-size:0.88rem; cursor:pointer; font-family:'Inter',sans-serif;
+  }
+  .form-msg { margin-top:12px; font-size:0.82rem; }
+  .form-msg.ok { color:var(--accent); }
+  .form-msg.err { color:var(--red); }
+
+  /* COUNT */
+  .reviews-count { color:var(--muted); font-size:0.85rem; margin-bottom:14px; }
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+
+<header>
+  <a class="logo" href="index.html">
+    <img class="logo-img" src="https://i.imgur.com/placeholder.png" onerror="this.style.display='none'" style="width:42px;height:42px;object-fit:contain;">
+    <span class="logo-text" style="font-family:'Inter',sans-serif;font-weight:800;font-size:1.35rem;">Virtual<span style="color:#00e5a0;">Deal</span></span>
+  </a>
+  <span class="nav-badge" style="background:rgba(0,229,160,0.12);border:1px solid rgba(0,229,160,0.25);color:#00e5a0;font-size:0.75rem;padding:4px 12px;border-radius:20px;font-weight:500;">Гарант сервис</span>
+  <a class="back-btn" href="index.html">← Назад</a>
+</header>
+
+<div class="container">
+  <div class="rating-summary">
+    <div>
+      <div class="rating-big">4.8</div>
+      <div class="rating-stars-row">
+        <span class="star-big">★</span><span class="star-big">★</span><span class="star-big">★</span><span class="star-big">★</span><span class="star-big" style="opacity:0.35">★</span>
+      </div>
+      <div class="rating-total">376 отзывов</div>
+    </div>
+    <div class="rating-bars">
+      <div class="bar-row"><span class="bar-label">5 ★</span><div class="bar-track"><div class="bar-fill" style="width:72%"></div></div><span class="bar-count">271</span></div>
+      <div class="bar-row"><span class="bar-label">4 ★</span><div class="bar-track"><div class="bar-fill" style="width:18%"></div></div><span class="bar-count">68</span></div>
+      <div class="bar-row"><span class="bar-label">3 ★</span><div class="bar-track"><div class="bar-fill" style="width:5%"></div></div><span class="bar-count">19</span></div>
+      <div class="bar-row"><span class="bar-label">2 ★</span><div class="bar-track"><div class="bar-fill" style="width:2%"></div></div><span class="bar-count">8</span></div>
+      <div class="bar-row"><span class="bar-label">1 ★</span><div class="bar-track"><div class="bar-fill" style="width:3%"></div></div><span class="bar-count">10</span></div>
+    </div>
+  </div>
+
+  <div class="add-review-section">
+    <button class="add-review-btn" onclick="toggleForm()">✏️ Разместить отзыв</button>
+    <div class="add-review-form" id="addForm">
+      <div class="form-group">
+        <label>Ключ товара (из вашей сделки)</label>
+        <input class="form-input" id="reviewKey" placeholder="ACT-XXXX-XXXX-XXXX">
+      </div>
+      <div class="form-group">
+        <label>Ваша оценка</label>
+        <div class="star-picker" id="starPicker">
+          <span class="star-pick" data-v="1" onclick="setStar(1)">★</span>
+          <span class="star-pick" data-v="2" onclick="setStar(2)">★</span>
+          <span class="star-pick" data-v="3" onclick="setStar(3)">★</span>
+          <span class="star-pick" data-v="4" onclick="setStar(4)">★</span>
+          <span class="star-pick" data-v="5" onclick="setStar(5)">★</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Ваш отзыв</label>
+        <textarea class="form-textarea" id="reviewText" placeholder="Напишите ваш отзыв..."></textarea>
+      </div>
+      <button class="form-submit" onclick="submitReview()">Отправить отзыв</button>
+      <div class="form-msg" id="formMsg"></div>
+    </div>
+  </div>
+
+  <div class="filter-row">
+    <span class="filter-label">Фильтр:</span>
+    <button class="filter-btn active" onclick="filterReviews(0,this)">Все</button>
+    <button class="filter-btn" onclick="filterReviews(5,this)">5 ★</button>
+    <button class="filter-btn" onclick="filterReviews(4,this)">4 ★</button>
+    <button class="filter-btn" onclick="filterReviews(3,this)">3 ★</button>
+    <button class="filter-btn" onclick="filterReviews(2,this)">2 ★</button>
+    <button class="filter-btn" onclick="filterReviews(1,this)">1 ★</button>
+  </div>
+
+  <div class="reviews-count" id="reviewsCount">Показано 376 отзывов</div>
+  <div class="reviews-grid" id="reviewsGrid"></div>
+</div>
+
+<script>
+const VALID_KEYS = [
+  'ACT-98XY-BF12-QW34','ACT-45H6-JD8L-ZP91','ACT-FR78-TR90-JG21',
+  'ACT-13DC-PL56-WT89','ACT-29KT-VB44-XY77','ACT-11B9-QW21-MJ44',
+  'ACT-MX58-WK12-LT93','ACT-QD47-CR90-HT15','ACT-62GH-RE91-BT23','ACT-KL21-SJ87-NV66'
+];
+
+const COLORS = ['#00e5a0','#0099ff','#f5c542','#ff7eb3','#a78bfa','#fb923c','#34d399','#60a5fa'];
+const NAMES = ['Alex_K','Dmitriy','v1tal','eSports_man','gamer99','SkyWalker','r3dFox','Nick_pro','Artem','m4ax','Serg1337','d4rknight','SniperX','ProTrade','MoonBoy','kappa228','CoolGuy','TurboMax','IvanIvanov','ByteCode','FlipMaster','ShadowZ','n1ghtfall','TradeKing','PixelQ','Zahar_Z','Mishanya','Kostyan','dimon_lol','AK_47user','EliteSeller','Bugged_acc','Vladimir','Petrovich','ArtemG','SkyNet','m1ster_x','FastTrade','GoldKey','Vasiliy','AlexSold','Kiriluha','Анонимный Пользователь','Tolik','Den1s','RusBoss','ProGamer','Slavik_01','MainAcc','TopSeller','lolkek228','Nikita_nn','Bogdan','R00ster','TradePro','GigaMan','FenixBird','SL1DE','SnapQ','MaxDamage','Gr3en','Danila','Evgen','RustPlayer','CsGoKing','MineKraft','Анонимный Пользователь','Andrey_vv','StrikeForce','HackerPro','TrueGamer','PassMaster','SilentBob','IceFox','BurnerAcc','DeltaQ','GoldTrader','Yaroslav','MikeXX','BraveHeart','Alik','Zheka','Rustem','XenonQ','PixelBro','SerpentX','ShadyDeal','Kovalev','TopFlip','ZxcMax','Timur_T','OlegSell','BlazeOne','NovaTrade','CyberStar','TradeZone','LegacyQ','Анонимный Пользователь','Maks_88','Petrov_D','CryptoKid','SafeDeal','TrustMe99','Анонимный Пользователь','Kolya_spb','Vovan_krd','Egor_play','SmartBuyer','QuickSale','Анонимный Пользователь','SafeCrypto','WebDev_K','GoodSeller','Анонимный Пользователь','Denis_msk','Ruslan_R','TopCrypto','Анонимный Пользователь'];
+
+const DATES = [];
+for (let i=0;i<376;i++){
+  const d = new Date(2024,0,1);
+  d.setDate(d.getDate() + Math.floor(Math.random()*365));
+  DATES.push(d.toLocaleDateString('ru-RU',{day:'2-digit',month:'2-digit',year:'numeric'}));
+}
+
+const positiveReviews = [
+  'Всё чётко, взял аккаунт через этот сервис, всё прошло быстро. Рекомендую.',
+  'Продавал через гарант — деньги пришли сразу после проверки. Спасибо!',
+  'Использовал уже третий раз, ни разу не подвели.',
+  'Норм',
+  'ок',
+  'Гуд',
+  'Покупал игровой акк на вбаксы — всё пришло, всё честно.',
+  'Ок, работает.',
+  'Оч хорошо',
+  'Сервис норм, жду следующей сделки.',
+  'Доволен, рекомендую всем кто покупает/продает аккаунты.',
+  'Задержки немного были но в целом всё ок',
+  'норм норм',
+  'Хороший сервис, нет мошенничества!',
+  '5/5',
+  'ок👍',
+  'Всё пришло, претензий нет.',
+  'Купил стим аккаунт через этот гарант — доволен. Быстро и без проблем.',
+  'Топ сервис.',
+  'Работает как нужно. Всё по честному.',
+  'Очень доволен! Купил акк Valorant, всё работает.',
+  'норм',
+  'ок',
+  'Всё честно, деньги не потерял.',
+  'Надёжно и быстро.',
+  'Гарант сработал отлично. Рекомендую.',
+  'ок всё',
+  'Быстро, чётко, без лишних вопросов.',
+  'работает',
+  'норм работает',
+  'Отличный сервис! Продал аккаунт без проблем.',
+  'Купил 3 аккаунта — все норм.',
+  'Честный гарант. Редко такое встретишь.',
+  'Хорошо.',
+  'Ок',
+  'Удобно что есть третья сторона, чувствуешь себя защищённым.',
+  'Использовал несколько раз — ни разу не обманули.',
+  'Ничего лишнего, просто работает.',
+  'ок.',
+  'норм',
+  'Очень хорошо! Продавец передал акк через гаранта, всё пришло.',
+  'Доверяю этому сервису.',
+  'Без обмана.',
+  'Прошло гладко.',
+  '👍',
+  'Топ!',
+  'Огонь сервис',
+  'Брал уже 5 раз — всегда норм.',
+  'Гарант реально работает. Не кидают.',
+  'Всё отлично прошло.',
+  'Оч быстро.',
+  'Купил акк в CS — рабочий, всё ок.',
+  'норм норм норм',
+  'Хорошо работают ребята.',
+  'Сервис делает своё дело.',
+  'ок',
+  'норм',
+  'Рекомендую! Безопасно.',
+  'Безопасная сделка — именно то что нужно.',
+  'Всё норм, спасибо.',
+  'Оперативно.',
+  'Хороший гарант.',
+  'Надёжно.',
+  'Всё супер.',
+  'ок',
+  'Топ.',
+  'Работает, проверял.',
+  'Купил аккаунт Fortnite через этот сервис. Всё чисто.',
+  'Не подвели.',
+  'Отлично!',
+  'норм',
+  'Спасибо за честную работу.',
+  'Доволен.',
+  'ок 👌',
+  'всё хорошо',
+  'Без мошенничества.',
+  'Крутой сервис для покупки аккаунтов.',
+  'Рекомендую всем.',
+  'ок',
+  'норм',
+  'быстро',
+  'Сработало как надо.',
+  'Купил — понравилось.',
+  'Всё как описано.',
+  'Гарант держит слово.',
+  'Проверили акк — всё ок, сделка прошла.',
+  'Хорошая работа!',
+  'нарм',
+  'ок',
+  'норм',
+  'Использовал для продажи — деньги получил быстро.',
+  'Заслуженные 5 звёзд.',
+  '5 из 5.',
+  'хор',
+  'норм',
+  'ок',
+  'Работает. Доволен.',
+  'Сделка прошла чисто.',
+  'Без задержек.',
+  'ок',
+  'Всё отлично.',
+  'Надёжный сервис.',
+  'норм',
+  'Отличная работа!',
+  'работает норм',
+  'всё ок',
+  'ок',
+  'Купил Warzone акк — пришёл чистый без банов. Спасибо.',
+  'Сделка на 50$ прошла без проблем через гарант.',
+  'Продал аккаунт за 30 минут. Всё чётко.',
+  'Единственный надёжный гарант что я нашёл.',
+  'Честно и быстро — что ещё нужно.',
+  'норм',
+  'ок',
+  'норм',
+  'Доволен качеством работы.',
+  'Супер.',
+  'Работает.',
+  'всё норм',
+  'ок',
+  'Спасибо.',
+  'Рекомендую.',
+  'Хорошо.',
+  'норм',
+  'ок',
+  'Всё чётко.',
+  'Огонь.',
+  'ок',
+  'Топ сервис.',
+  'норм',
+  'Отличная работа ребят.',
+  'Пользовался дважды — оба раза без проблем.',
+  'Гарант — это правильный подход к сделкам.',
+  'ок',
+  'норм',
+  'хор',
+  'Купил акк WoW — всё в порядке.',
+  'Без кидалова.',
+  'ок',
+  'Рабочая схема.',
+  'Норм норм.',
+  'Всё ок.',
+  'Использовал впервые — понравилось.',
+  'Буду обращаться снова.',
+  'ок',
+  'Сервис честный.',
+  'Рекомендую всем кто боится кидалова.',
+  'норм',
+  'Купил акк Apex — рабочий.',
+  'Отлично.',
+  'ок',
+  'норм',
+  'Сделка прошла быстро.',
+  'Всё супер.',
+  'Хорошо работают.',
+  'ок',
+  'норм',
+  'Топ.',
+  'Всё прошло чисто.',
+  'Единственный гарант которому доверяю.',
+  'ок',
+  'Спасибо за сервис.',
+  'Норм.',
+  'работает',
+  'ок',
+  'норм',
+  'Оперативно решили вопрос.',
+  'Честный подход.',
+  'ок',
+  'норм',
+  'Всё супер, спасибо.',
+  'Буду советовать друзьям.',
+  'ок',
+  'норм',
+  // --- НОВЫЕ ОТЗЫВЫ ---
+  // Про крипту
+  'Переводил USDT через гарант. Всё прошло чисто, без задержек. Рекомендую для крипто сделок.',
+  'Страховал крипту на 500 USDT — сервис сработал нормально. Продавец не кинул, всё пришло.',
+  'Первый раз использовал гарант для крипты. Немного переживал, но всё прошло как надо.',
+  'Отличная страховка для обмена крипты. Теперь только через гарант.',
+  'ок, крипта дошла',
+  'Перевод BTC через гарант — занял 20 минут. Всё чётко.',
+  'норм для крипты',
+  'Страховал сделку на USDT. Без проблем.',
+  'Крипто-сделка прошла отлично. Гарант держит слово.',
+  'ок 👍 крипта',
+  'Очень удобно для крипто-обмена. Не надо бояться кидалова.',
+  'норм',
+  'ок',
+  // Про разработку сайтов
+  'Заказывал разработку сайта через фрилансера, использовал гарант как страховку. Сайт сделали, деньги отдал только после проверки. Всё честно.',
+  'Нанял разработчика через гарант. Это правильный подход — платишь только за результат.',
+  'Разработка лендинга через гарант. Фрилансер сдал работу вовремя, всё норм.',
+  'ок, сайт сделали как договорились',
+  'Хорошая страховка для фриланс-сделок. Буду использовать снова.',
+  'Фрилансер не мог кинуть т.к. деньги держал гарант. Удобно.',
+  'норм для фриланса',
+  'Работал с разработчиком впервые — гарант дал уверенность. Всё окей.',
+  'Сайт готов, деньги ушли только после приёмки. 5/5',
+  'ок',
+  // Про страховку покупателя
+  'Покупал дорогой аккаунт — страховка покупателя реально помогла. Продавец передал всё как надо.',
+  'Страховка покупателя — это must have. Потратил 25$ но зато не потерял 300$.',
+  'Использовал страховку покупателя. Гарант проверил товар перед передачей. Доволен.',
+  'ок, страховка сработала как надо',
+  'норм',
+  'Купил аккаунт с дорогим скином. Страховка дала спокойствие.',
+  'ок 👌',
+  'Страховка покупателя — лучшее что придумали для онлайн-сделок.',
+  'норм, покупка прошла безопасно',
+  'Взял страховку покупателя на сделку 200$. Всё прошло гладко.',
+  // Обычные короткие
+  'ок',
+  'норм',
+  'Всё работает.',
+  'хор',
+  'ок',
+  'норм',
+  'Доволен.',
+  'Спасибо.',
+  'ок',
+  'норм',
+  'Рекомендую.',
+  'Хорошо.',
+  'ок',
+  'норм',
+  'Всё чётко.',
+  '5 звёзд.',
+  'ок',
+  'норм',
+  'Топ.',
+  'ок',
+  'норм',
+  'Работает.',
+  'ок',
+  'норм',
+  'Сделка прошла быстро.',
+  'Всё как обещали.',
+  'ок',
+  'норм',
+  'Безопасно.',
+  'ок',
+  'норм',
+  'Использовал трижды — всё ок.',
+  'Без обмана.',
+  'ок',
+  'Надёжно.',
+  'норм',
+  'ок',
+  'Честный сервис.',
+  'норм',
+  'ок',
+  'Всё супер.',
+  'Быстро.',
+  'норм',
+  'ок',
+  'Доверяю.',
+  'норм',
+  'Купил — доволен.',
+  'ок',
+  'норм',
+  'Сделка закрыта чисто.',
+  'ок',
+  'норм',
+  'Хорошая работа.',
+  'ок',
+  'Всё норм.',
+  'норм',
+  'ок',
+  'Работают чётко.',
+  'Гуд.',
+  'ок',
+  'норм',
+  'Продал без проблем.',
+  'ок',
+  'норм',
+  'Спасибо за честность.',
+  'ок',
+  'Всё прозрачно.',
+  'норм',
+  'ок',
+  'Сработало.',
+  'норм',
+  'ок',
+  'Рекомендую всем.',
+  'норм',
+  'ок',
+  'Всё в порядке.',
+  'Буду снова.',
+  'ок',
+  'норм',
+  'Отлично.',
+  'ок',
+  'норм',
+  'Без задержек.',
+  'ок',
+  'норм',
+  'Сервис рабочий.',
+  'ок',
+  'норм',
+  'Хороший гарант.',
+  'ок',
+  'норм',
+  'Продавец не кинул благодаря гаранту.',
+  'ок',
+  'Всё честно.',
+  'норм',
+  'ок',
+  'Норм сервис.',
+  'ок',
+  'норм',
+  'Купил аккаунт — пришёл рабочий.',
+  'ок',
+  'норм',
+  'Заслуженные 5★.',
+  'ок',
+  'норм',
+  'ок',
+  'Работает как надо.',
+  'норм',
+  'ок',
+  'Всё ок.',
+  'норм',
+  'ок',
+  'норм',
+];
+
+const negativeReviews = [
+  'Ждал 3 часа пока проверят акк. Это слишком долго, в следующий раз подумаю.',
+  'Не понравилось что долго не отвечали в тг. Почти 2 часа ждал.',
+  'Нормально в целом, но цена в 25 баксов высоковата для бюджетных аккаунтов.',
+  'Сделка прошла но поддержка реагирует медленно. Ожидал быстрее.',
+  'Один раз сделка зависла на несколько часов без обьяснений. Потом всё решилось но осадок остался.',
+  'Цена завышена немного. За 10 баксов было бы идеально.',
+  'Ответили только через полтора часа. Для срочной сделки это плохо.'
+];
+
+let selectedStar = 0;
+let currentFilter = 0;
+
+function generateReviews() {
+  const all = [];
+  const negativeIndices = new Set([12,35,67,89,120,145,170,200,230,260,290,320,350]);
+
+  for (let i=0; i<376; i++) {
+    let stars, text;
+    if (negativeIndices.has(i)) {
+      stars = Math.random()<0.5 ? 1 : 2;
+      text = negativeReviews[all.filter(r=>r.negative).length % negativeReviews.length];
+    } else {
+      const r = Math.random();
+      if (r < 0.72) stars = 5;
+      else if (r < 0.90) stars = 4;
+      else if (r < 0.95) stars = 3;
+      else stars = 4;
+      text = positiveReviews[i % positiveReviews.length];
+    }
+    const nameIdx = (i * 7 + 3) % NAMES.length;
+    all.push({
+      id: i,
+      name: NAMES[nameIdx],
+      date: DATES[i],
+      stars,
+      text,
+      color: COLORS[i % COLORS.length],
+      negative: negativeIndices.has(i)
+    });
+  }
+  return all;
+}
+
+const allReviews = generateReviews();
+
+function renderStars(n) {
+  let s = '';
+  for (let i=1;i<=5;i++) s+=`<span class="${i<=n?'s-gold':'s-empty'}">★</span>`;
+  return s;
+}
+
+function renderReviews(filter) {
+  const grid = document.getElementById('reviewsGrid');
+  const count = document.getElementById('reviewsCount');
+  const filtered = filter===0 ? allReviews : allReviews.filter(r=>r.stars===filter);
+  count.textContent = `Показано ${filtered.length} отзывов`;
+  grid.innerHTML = filtered.map(r=>`
+    <div class="review-card">
+      <div class="review-header">
+        <div class="avatar" style="background:${r.color}22;color:${r.color}">${r.name[0].toUpperCase()}</div>
+        <div class="review-meta">
+          <div class="review-name">${r.name}</div>
+          <div class="review-date">${r.date}</div>
+        </div>
+        <div class="review-stars">${renderStars(r.stars)}</div>
+        ${!r.negative ? '<span class="badge-verified">✓ Верифицирован</span>' : ''}
+      </div>
+      <div class="review-text">${r.text}</div>
+    </div>
+  `).join('');
+}
+
+function filterReviews(val, btn) {
+  currentFilter = val;
+  document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderReviews(val);
+}
+
+function toggleForm() {
+  const f = document.getElementById('addForm');
+  f.classList.toggle('open');
+}
+
+function setStar(n) {
+  selectedStar = n;
+  document.querySelectorAll('.star-pick').forEach(s=>{
+    s.classList.toggle('lit', parseInt(s.dataset.v)<=n);
+  });
+}
+
+function submitReview() {
+  const key = document.getElementById('reviewKey').value.trim().toUpperCase();
+  const text = document.getElementById('reviewText').value.trim();
+  const msg = document.getElementById('formMsg');
+  if (!VALID_KEYS.includes(key)) {
+    msg.textContent = '✗ Неверный ключ. Только покупатели с действующим ключом могут оставлять отзыв.';
+    msg.className = 'form-msg err'; return;
+  }
+  if (!text) { msg.textContent = '✗ Напишите текст отзыва.'; msg.className='form-msg err'; return; }
+  if (!selectedStar) { msg.textContent = '✗ Выберите оценку.'; msg.className='form-msg err'; return; }
+  msg.textContent = '✓ Отзыв отправлен! Спасибо.';
+  msg.className='form-msg ok';
+  document.getElementById('reviewKey').value='';
+  document.getElementById('reviewText').value='';
+  setStar(0);
+}
+
+renderReviews(0);
+</script>
+</body>
+</html>
